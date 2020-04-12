@@ -1,3 +1,7 @@
+const proxyurl = "https://sheltered-dawn-97733.herokuapp.com/";
+const ITEMS_PER_CATEGORY_PAGE = 12;
+const rsApi = new RSAPI;
+
 function RSAPI (){
 
     this.base_URL = 'http://services.runescape.com/m=itemdb_rs/api/catalogue/items.json?', //category=36&alpha=maple log&page=1'
@@ -23,8 +27,8 @@ function RSAPI (){
     }
 }
 
-function addColumnInHTML(data){
-    return "<div class=\"col text-center\">" + data + "</div>";
+function addColumnInHTML(data, columnConfig='col', textAlign="text-center",){
+    return "<div class=\"" + columnConfig + " " + textAlign + "\">" + data + "</div>";
 }
 
 function addImageInHTML(href){
@@ -44,6 +48,9 @@ function makeGreen (html){
 }
 
 function castToNumericFormat(stringNumber){
+    if (!stringNumber){
+        return "NaN";
+    }
     stringNumber = stringNumber.toString();
     if(stringNumber.toLowerCase().includes('k')){
         return stringNumber.substring(0, stringNumber.length-1)*1000; // replacing K with 1,000s
@@ -59,7 +66,7 @@ const fetchData = async (RESTcall) => {
     return response;
 }
 
-let getCatalogue = async (categoryId) => {
+let getFullCatalogue = async (categoryId) => {
     const CATALOGUE_PAGE_SIZE = 12;
     let catalogue = [];
     (await (await fetchData(proxyurl + rsApi.catalogueRequestFactory(categoryId))).json()).alpha.forEach((index) => {
@@ -71,16 +78,19 @@ let getCatalogue = async (categoryId) => {
     return catalogue;
 }
 
-let getPriceSortedItemsFromCatalogue = async (moduleMapper) => {
+let getPriceSortedItemsFromCatalogue = async (moduleMapper, catalogue=null) => {
     let categoryId = moduleMapper.CATEGORY_ID;
     let htmlTableOutput = moduleMapper.HTML_TABLE_OUTPUT;
     let htmlStateOutput = moduleMapper.HTML_STATE_OUTPUT;
     let moduleRowDataMapper = moduleMapper.rowDataMapper;
+    let moduleTableHeader = moduleMapper.ARCHEOLOGY_MATERIAL_PRICE_TABLE_HEADER;
     let itemList = [];
-
+    $(htmlTableOutput).html(moduleTableHeader);
     setModuleState(htmlStateOutput, "LOADING");
-    let catalogue = await getCatalogue(categoryId);
 
+    if (catalogue == null){
+        catalogue = await getFullCatalogue(categoryId);
+    }
     for (index of catalogue){
         for(let pageNumber = 0; pageNumber < index.pageCount; pageNumber++ ){
             try{
@@ -98,20 +108,36 @@ let getPriceSortedItemsFromCatalogue = async (moduleMapper) => {
     }
 
     setModuleState(htmlStateOutput, 'SORTING');
+    //TODO make sort function a passed variable from module mapper -- executed here
     let sortedItemList = itemList.sort(function(a, b) {
         return castToNumericFormat(a.current.price) < castToNumericFormat(b.current.price) ? 1 : -1;
     });
 
     console.log(sortedItemList);
-    $(htmlTableOutput).html(ARCHEOLOGY_MATERIAL_PRICE_TABLE_HEADER)
+    let tableData = '';
     for (item of sortedItemList){
-        $(htmlTableOutput).append(addRowInHTML(addColumnInHTML(addImageInHTML(item.icon)) 
-        + addColumnInHTML(item.name) 
-        + addColumnInHTML(item.current.price)
-        + addColumnInHTML((item.today.trend.toLowerCase() === "negative"
-                ? makeRed(item.today.trend)
-                : makeGreen(item.today.trend))
-            + " (" + item.today.price + ")")));
+        tableData += moduleRowDataMapper(item);
     }
+    $(htmlTableOutput).html(moduleTableHeader + tableData);
+
     setModuleState(htmlStateOutput, 'DONE');
+}
+
+function setModuleState(_module, state){
+    let checkmarkHTML = "<i class='fas fa-check' style='color: green;'></i>";
+    let errorHTML = "<i class='fas fa-times' style='color: tomato;'></i>";
+    let spinnerHTML = "<div class='spinner-border text-primary' style='width: 1rem; height: 1rem;'"
+        + "role='status'><span class='sr-only'>Loading...</span></div>";
+
+    if (state.toUpperCase() == "LOADING") {
+        $(_module).html(' Fetching data! ' + spinnerHTML);
+    } else if (state.toUpperCase() == "SORTING" ) {
+        $(_module).html(' Sorting data (almost done!) ' + spinnerHTML);
+    } else if (state.toUpperCase() == "DONE") {
+        $(_module).html(' Done! ' + checkmarkHTML);
+    } else if (state.toUpperCase() == "ERROR"){
+        $(_module).html(' Error processing request. ' + errorHTML);
+    } else if (state.toUpperCase() == "CALCULATING"){
+        $(_module).html(' Performing Calculations (almost done!) ' + spinnerHTML)
+    }
 }

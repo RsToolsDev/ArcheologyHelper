@@ -13,22 +13,22 @@
     <div class="container">
         <div class="display-3 text-align">RS3 Archeology API<hr></div>
             <div id="archeology-section" class="">
-                <div class="display-4">
-                    <span class="btn btn-outline-secondary collapse-button mb-1" style="font-size: .8rem; padding: .3rem .4rem;">
+                <div id="archeology-material-module" class="display-4" style="font-size: 2.5rem;">
+                    <span class="btn btn-outline-secondary collapse-button mb-1" style="font-size: .6rem; padding: .25rem .32rem;">
                         <i class="fas fa-chevron-up"></i>
                     </span>
                     Archeology Material Prices 
                     <span id="archeology-material-price-state" style="font-size: medium;" class="d-inline"> </span>
                 </div>
-                <div id="archeology-material-price-table" class="py-2 my-3 rounded container border border-secondary collapse">
-                    <div class="pt-2 row font-weight-bold text-uppercase text-center">
-                        <div class="col">Image</div>
-                        <div class="col">Name</div>
-                        <div class="col">Price</div>
-                        <div class="col">Trend (Delta-Price)</div>
-                    </div>
-                    <hr>
+                <div id="archeology-material-price-table" class="py-2 my-3 rounded container border border-secondary collapse"></div>
+                <div id="porter-cost-module" class="display-4" style="font-size: 2.5rem;">
+                    <span class="btn btn-outline-secondary collapse-button mb-1" style="font-size: .6rem; padding: .25rem .32rem;">
+                        <i class="fas fa-chevron-up"></i>
+                    </span>
+                    Sign of the porter Cost Analyzer 
+                    <span id="porter-cost-state" style="font-size: medium;" class="d-inline"> </span>
                 </div>
+                <div id="porter-cost-table" class="py-2 my-3 rounded container border border-secondary collapse"> </div>
             </div>
         </div>
     </div>
@@ -40,5 +40,6 @@
     <!-- end optional -->
     <script src="./Rsapi.js"></script>
     <script src="./archeology-material-prices.js"></script>
+    <script src="./porter-cost-analyzer.js"></script>
     </body>
 </html>
