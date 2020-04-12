@@ -39,16 +39,21 @@ let getArcheologyCatalogue = async () => {
 let getItemsFromCatalogue = async (categoryId, htmlTableOutput, htmlStateOutput) => {
     for (index of archeologyCatalogIndexes){
         //TODO add functionality for multiple category pages
-        let data = await (await fetchData(proxyurl + rsApi.categoryRequestFactory(categoryId, index.letter, 1))).json();
-        for (item of data.items){
-            archeologyMaterialList.push(item);
-            $(htmlTableOutput).append(addRowInHTML(addColumnInHTML(addImageInHTML(item.icon)) 
-                + addColumnInHTML(item.name) 
-                + addColumnInHTML(item.current.price)
-                + addColumnInHTML((item.today.trend.toLowerCase() === "negative"
-                    ? makeRed(item.today.trend)
-                    : makeGreen(item.today.trend))
-                + " (" + item.today.price + ")")));
+        try{
+            let response = await fetchData(proxyurl + rsApi.categoryRequestFactory(categoryId, index.letter, 1));
+            let data = await response.json();
+            for (item of data.items){
+                archeologyMaterialList.push(item);
+                $(htmlTableOutput).append(addRowInHTML(addColumnInHTML(addImageInHTML(item.icon)) 
+                    + addColumnInHTML(item.name) 
+                    + addColumnInHTML(item.current.price)
+                    + addColumnInHTML((item.today.trend.toLowerCase() === "negative"
+                        ? makeRed(item.today.trend)
+                        : makeGreen(item.today.trend))
+                    + " (" + item.today.price + ")")));
+            }
+        } catch (exception) {
+            setModuleState(htmlStateOutput, 'ERROR');
         }
     }
     setModuleState(htmlStateOutput, 'SORTING');
@@ -70,8 +75,27 @@ let getItemsFromCatalogue = async (categoryId, htmlTableOutput, htmlStateOutput)
     setModuleState(htmlStateOutput, 'DONE');
 }
 
+
 getArcheologyCatalogue();
 
+$('#archeology-section .collapse-button').on('click', () => {
+    console.log('collapse');
+
+    if ($('#archeology-material-price-table').is('.show')){
+        console.log('123');
+        $('#archeology-section .collapse-button .fas').css({
+            "transition": "transform .5s",
+            "transform": "rotate(1deg)"
+        })
+    } else {
+        $('#archeology-section .collapse-button .fas').css({
+            "transition": "transform .5s",
+            "transform": "rotate(180deg)"
+        })
+    }
+
+    $('#archeology-material-price-table').collapse('toggle');
+});
 
 function addColumnInHTML(data){
     return "<div class=\"col text-center\">" + data + "</div>";
@@ -97,11 +121,14 @@ function setModuleState(_module, state){
     let spinnerHTML = "<div class='spinner-border text-primary' style='width: 1rem; height: 1rem;'"
         + "role='status'><span class='sr-only'>Loading...</span></div>";
     let checkmarkHTML = "<i class='fas fa-check' style='color: green;'></i>";
+    let errorHTML = "<i class='fas fa-times' style='color: tomato;'></i>";
 
     if (state.toUpperCase() == "SORTING" ) {
         $(_module).html(' Sorting Data (almost done!)' + spinnerHTML);
     } else if (state.toUpperCase() == "DONE") {
         $(_module).html(' Done! ' + checkmarkHTML);
+    } else if (state.toUpperCase() == 'ERROR'){
+        $(_module).html(' Error processing request. Please refresh the page or try again later ' + errorHTML);
     }
 }
 
